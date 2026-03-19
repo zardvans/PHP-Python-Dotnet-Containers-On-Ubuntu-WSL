@@ -1,0 +1,70 @@
+version: "3.9"
+
+services:
+  php:
+    build: ./php
+    container_name: php
+    volumes:
+      - ../apps/php-services:/var/www/html
+    networks:
+      - appnet
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "php-fpm", "-t"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+    networks:
+      - appnet
+
+  python:
+    build: ./python
+    container_name: python
+    volumes:
+      - ../apps/python-service:/app
+    networks:
+      - appnet
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000"]
+      interval: 10s
+
+  dotnet:
+    build: ./dotnet
+    container_name: dotnet
+    volumes:
+      - ../apps/dotnet-service:/app
+    networks:
+      - appnet
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 10s
+
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: app
+    ports:
+      - "3306:3306"
+    networks:
+      - appnet
+
+  redis:
+    image: redis:alpine
+    networks:
+      - appnet
+
+networks:
+  appnet:
