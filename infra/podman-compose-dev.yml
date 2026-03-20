@@ -2,7 +2,9 @@ version: "3.9"
 
 services:
   php:
-    build: ./php
+    build:
+      context: ..
+      dockerfile: infra/php/Dockerfile
     container_name: php
     volumes:
       - ../apps/php-services:/var/www/html
@@ -10,7 +12,7 @@ services:
       - appnet
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "php-fpm", "-t"]
+      test: ["CMD", "php", "/var/www/html/health.php"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -19,40 +21,55 @@ services:
     image: nginx:latest
     container_name: nginx
     ports:
-      - "8080:80"
+      - "8000:80"
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ../apps/php-services:/var/www/html
     depends_on:
       - php
     networks:
       - appnet
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health.php"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   python:
-    build: ./python
+    build:
+      context: ..
+      dockerfile: infra/python/Dockerfile
     container_name: python
     volumes:
-      - ../apps/python-service:/app
+      - ../apps/python-services:/app
     networks:
       - appnet
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000"]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
       interval: 10s
+      timeout: 5s
+      retries: 3
 
   dotnet:
-    build: ./dotnet
+    build:
+      context: ..
+      dockerfile: infra/dotnet/Dockerfile
     container_name: dotnet
-    volumes:
-      - ../apps/dotnet-service:/app
+    ports:
+      - "8001:8080"
     networks:
       - appnet
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 10s
+      timeout: 5s
+      retries: 3
 
   mysql:
     image: mysql:8
+    container_name: mysql
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: app
@@ -63,6 +80,7 @@ services:
 
   redis:
     image: redis:alpine
+    container_name: redis
     networks:
       - appnet
 
