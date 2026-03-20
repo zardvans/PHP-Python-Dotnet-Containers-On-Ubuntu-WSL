@@ -12,12 +12,14 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
-
 var summaries = new[]
 {
     "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
 };
+
+app.MapGet("/", () => Results.Ok(new { service = "dotnet", status = "healthy" }));
+
+app.MapGet("/health", () => Results.Ok(new { service = "dotnet", status = "healthy" }));
 
 app.MapGet("/weatherforecast", () =>
 {
