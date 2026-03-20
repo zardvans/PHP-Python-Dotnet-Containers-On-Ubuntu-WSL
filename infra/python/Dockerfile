@@ -5,13 +5,14 @@ FROM python:3.12-slim
 WORKDIR /app
 
 # Copy requirements first (good for caching)
-COPY requirements.txt .
+COPY infra/python/requirements.txt .
 
 # Install dependencies
+RUN (command -v apk >/dev/null && apk add --no-cache curl) || (apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*)
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy source code
-COPY ../apps/python-service/. .
+COPY ../apps/python-services/. .
 
 # Set environment variable
 ENV PYTHONUNBUFFERED=1
